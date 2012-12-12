@@ -1,0 +1,37 @@
+.remove_language, .add_language {
+	width: 16px;
+	height: 16px;
+	cursor: pointer;
+}
+
+.remove_language {
+	background: url(images/remove.png);
+}
+
+.add_language {
+	background: url(images/add.png) no-repeat;
+	width: 238px;
+	background-color: rgb(243, 248, 236);
+	padding: 5px 0 5px 40px;
+	background-position: 8px;
+	border-radius: 3px;
+	border: 1px solid rgb(221, 235, 202);
+}
+.add_language:hover {
+	background-color: rgb(234, 247, 217);
+}
+
+#console {
+	float: left;
+	margin: 20px;
+}
+
+#console textarea {
+	width: 300px;
+	height: 300px;
+}
+
+#msg {
+	padding: 10px;
+	background-color: rgb(234, 247, 217);
+}

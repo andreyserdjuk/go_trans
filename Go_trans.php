@@ -8,6 +8,23 @@ Author: Andrej Serdjuk
 Author URI: http://vk.com/lincoln6eco
 */
 
+// detect Ajax request
+if ( !empty($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"]=='XMLHttpRequest' ) {
+
+    if ( isset($_POST['go_trans_options']) ) {
+
+        $go_trans_options = json_decode(stripslashes($_POST['go_trans_options']), true);
+        update_option( 'go_trans_options', $go_trans_options );
+    }
+
+    var_dump($_POST);
+
+
+    exit;
+}
+
+require_once("go_form.php");
+
 add_action( 'admin_menu', 'register_go_trans_menu_page' );
 add_action('trashed_post', 'translation_sync');
 add_action('delete_post', 'translation_sync');
@@ -49,6 +66,66 @@ function html_go_translate_metabox( $post ) {
     
     if ( isset($_POST['translate_post']) )
         translate_post ( $_POST['translate_post'] );
+}
+
+function register_go_trans_menu_page () {
+
+    add_menu_page( 'Заполнить пустоту переводами', 'Go_Trans', 'add_users', 'Go_Trans/Go_Trans.php', 'go_trans_admin_menu', plugins_url('Go_Trans/images/icon.png'), 3 );
+}
+
+function go_trans_admin_menu() {
+
+    // add scripts, styles...
+    add_options_page( 'Заполнить пустоту переводами', 'Go_Trans', 8, 'go_trans_option_page', 'go_trans_option_page' );
+    wp_register_script( 'jquery-1.8.3.min', plugins_url('Go_Trans/jquery-1.8.3.min.js') );
+    wp_enqueue_script( 'jquery-1.8.3.min' );
+    wp_register_script( 'Go_Trans', plugins_url('Go_Trans/Go_Trans.js') );
+    wp_enqueue_script( 'Go_Trans' );
+    wp_register_style('go_trans_styles', plugins_url('Go_Trans/go_trans_styles.css'));
+    wp_enqueue_style('go_trans_styles');
+
+
+    $go_trans_translate_options = array( 'options' => array( 'post_status' => 'draft' ) );
+    $lang_set = '{"ab":"абхазский","av":"аварский","ae":"авестийский","az":"азербайджанский","ay":"аймара","ak":"акан","sq":"албанский","am":"амхарский","en":"английский","ar":"арабский","hy/ am":"армянский","as":"ассамский","aa":"афарский","af":"африкаанс","bm":"бамбара","eu":"баскский","ba":"башкирский","be":"белорусский","bn":"бенгальский","my":"бирманский","bi":"бислама","bg":"болгарский","bs":"боснийский","br":"бретонский","cy":"валлийский","hu":"венгерский","ve":"венда","vo":"волапюк","wo":"волоф","vi":"вьетнамский","gl":"галисийский","lg":"ганда","hz":"гереро","kl":"гренландский","el":"греческий (новогреческий)","ka":"грузинский","gn":"гуарани","gu":"гуджарати","gd":"гэльский","da":"датский","dz":"дзонг-кэ","dv":"дивехи (мальдивский)","zu":"зулу","he":"иврит","ig":"игбо","yi":"идиш","id":"индонезийский","ia":"интерлингва","ie":"интерлингве","iu":"инуктитут","ik":"инупиак","ga":"ирландский","is":"исландский","es":"испанский","it":"итальянский","yo":"йоруба","kk":"казахский","kn":"каннада","kr":"канури","ca":"каталанский","ks":"кашмири","qu":"кечуа","ki":"кикуйю","kj":"киньяма","ky":"киргизский","zh":"китайский","kv":"коми","kg":"конго","ko":"корейский","kw":"корнский","co":"корсиканский","xh":"коса","ku":"курдский","km":"кхмерский","lo":"лаосский","la":"латинский","lv":"латышский","ln":"лингала","lt":"литовский","lu":"луба-катанга","lb":"люксембургский","mk":"македонский","mg":"малагасийский","ms":"малайский","ml":"малаялам","mt":"мальтийский","mi":"маори","mr":"маратхи","mh":"маршалльский","mo":"молдавский","mn":"монгольский","gv":"мэнский (мэнкский)","nv":"навахо","na":"науру","nd":"ндебеле северный","nr":"ндебеле южный","ng":"ндунга","de":"немецкий","ne":"непальский","nl":"нидерландский (голландский)","no":"норвежский","ny":"ньянджа","nn":"нюнорск (новонорвежский)","oj":"оджибве","oc":"окситанский","or":"ория","om":"оромо","os":"осетинский","pi":"пали","pa":"пенджабский","fa":"персидский","pl":"польский","pt":"португальский","ps":"пушту","rm":"ретороманский","rw":"руанда","ro":"румынский","rn":"рунди","ru":"русский","sm":"самоанский","sg":"санго","sa":"санскрит","sc":"сардинский","ss":"свази","sr":"сербский","si":"сингальский","sd":"синдхи","sk":"словацкий","sl":"словенский","so":"сомали","st":"сото южный","sw":"суахили","su":"сунданский","tl":"тагальский","tg":"таджикский","th":"тайский","ty":"таитянский","ta":"тамильский","tt":"татарский","tw":"тви","te":"телугу","bo":"тибетский","ti":"тигринья","to":"тонганский","tn":"тсвана","ts":"тсонга","tr":"турецкий","tk/ tu":"туркменский","uz":"узбекский","ug":"уйгурский","uk":"украинский","ur":"урду","fo":"фарерский","fj":"фиджи","fi":"финский","fr":"французский","fy":"фризский","ff":"фулах","ha":"хауса","hi":"хинди","ho":"хиримоту","cu":"церковнославянский","ch":"чаморро","ce":"чеченский","cs":"чешский","za":"чжуанский","cv":"чувашский","sv":"шведский","sn":"шона","ee":"эве","eo":"эсперанто","et":"эстонский","jv":"яванский","ja":"японский"}';
+    $lang_set = json_decode($lang_set, true);
+
+    $go_trans_options = '{ ru:{id_cat:0, enabled:0, domain:""} }';
+    add_option( 'go_trans_options', $go_trans_options);
+    $go_trans_options = get_option('go_trans_options');
+
+    get_main_form($lang_set);
+   
+    global $wpdb;
+
+    if ( isset($_POST['delete_translations_cache']) ) {
+        $wpdb->query("DELETE FROM `wp_go_translations`");
+        echo "кеш переводов удален";
+    }
+
+    if ( isset($_POST['delete_translated_posts']) ) {
+
+        $translated_posts_field = $_POST['delete_translated_posts'];
+        $translated = $wpdb->get_results("SELECT DISTINCT $translated_posts_field FROM `wp_go_translations`", ARRAY_A);
+        
+        foreach ($translated as $post) {
+            wp_delete_post( $post[$translated_posts_field], true );
+            $wpdb->query("UPDATE `wp_go_translations` SET $translated_posts_field = NULL WHERE $translated_posts_field = ".$post[$translated_posts_field] );
+        }
+
+        echo "$translated_posts_field - посты удалены";
+    }
+
+    if ( isset($_POST['delete_all_translated_posts']) ) { delete_all_translated_posts(); }
+
+    if ( $_POST['translate']=='yes' ) {
+
+        $result = translate_posts( $go_trans_options );
+
+        if ( $result == 'no_tasks' )
+            echo "Задачи по переводам не поставлены.";
+        if ( $result == 'google_translate_not_responding' )
+            echo "Переводчик гугла не вернул переведенный текст.";
+    }
 }
 
 function translate_post ( $post_id ) {
@@ -118,126 +195,6 @@ function translation_sync ( $id ) {
                 $wpdb->query("UPDATE `wp_go_translations` SET $lang_table_code = NULL WHERE $lang_table_code = $id");
             }
         }
-    }
-}
-
-function register_go_trans_menu_page () {
-
-    add_menu_page( 'Заполнить пустоту переводами', 'Go_Trans', 'add_users', 'Go_Trans/Go_Trans.php', 'go_trans_admin_menu', plugins_url('Go_Trans/icon.png'), 3 );
-}
-
-function go_trans_admin_menu() {
-
-    add_options_page( 'Заполнить пустоту переводами', 'Go_Trans', 8, 'go_trans_option_page', 'go_trans_option_page' );
-    wp_register_script( 'jquery-1.8.3.min', plugins_url('Go_Trans/jquery-1.8.3.min.js') );
-    wp_enqueue_script( 'jquery-1.8.3.min' );
-    wp_register_script( 'Go_Trans', plugins_url('Go_Trans/Go_Trans.js') );
-    wp_enqueue_script( 'Go_Trans' );
-
-    echo "<h1>Заполнить пустоту переводами</h1>";
-
-    $lanuages_options = array(
-        'russian' => array( 'slug' => 'ru', 'enabled' => 0, 'id' => null ),
-        'english' => array( 'slug' => 'en', 'enabled' => 0, 'id' => null ),
-        'french' => array( 'slug' => 'fr', 'enabled' => 0, 'id' => null ),
-        'chinese' => array( 'slug' => 'zh-hant', 'enabled' => 0, 'id' => null )
-    );
-
-    add_option( 'lanuages_options', $lanuages_options );
-
-    if ( isset($_POST['lanuages_options']) && $_POST['translate']=='no' ) {
-
-        $lanuages_options = json_decode(stripslashes($_POST['lanuages_options']), true);
-        update_option( 'lanuages_options', $lanuages_options );
-    }
-
-    $lanuages_options = get_option('lanuages_options'); ?>
-
-    <form id="lanuages_options_data" method="POST">
-        <table>
-            <tr>
-                <td>Language</td>
-                <td>slug</td>
-                <td>id category</td>
-                <td>enabled?</td>
-            </tr>
-
-        <?php
-        if ( empty($lanuages_options) ) $lanuages_options = array( 'russian' => array( 'slug' => 'ru', 'enabled' => 0, 'id' => null ) );
-        foreach ($lanuages_options as $lanuage => $options): ?>
-            
-            <tr>
-                <td><input name="language" value="<?= $lanuage ?>" type="hidden"><?= $lanuage ?></td>
-                <td><input type="text" name="slug" value="<?= $options['slug'] ?>"></td>
-                <td><input type="text" name="id" value="<?= $options['id'] ?>"></td>
-                <td><input type="checkbox" name="enabled" <?php if ( $options['enabled']==1 ): ?>checked="checked"<?php endif; ?>></td>
-            </tr>
-
-        <?php endforeach; ?>
-        
-        </table>
-    </form>
-    <form method="POST" id="options_serialized">
-        <select name="post_status">
-            <option value="draft">Черновик</option>
-            <option value="publish">Опубликованные записи</option>
-            <option value="future">Будущие</option>
-            <option value="private">Приватные</option>
-        </select>
-        <input type="submit" id="save_options" value="Save options">
-        <input type="submit" id="translate" value="Translate">
-        <input type="hidden" name="translate" value="yes">
-        <input type="hidden" name="lanuages_options">
-    </form><br>
-    <form method="POST">
-        <input type="hidden" name="delete_translations_cache">
-        <input type="submit" value="Удалить кеш переводов">
-    </form><br>
-    <form method="POST">
-        <select name="delete_translated_posts">
-            <option value="en_post_id">английский</option>
-            <option value="fr_post_id">французский</option>
-            <option value="cn_post_id">китайский</option>
-        </select>
-        <input type="submit" value="Удалить переведенные посты">
-    </form><br>
-    <form method="POST">
-        <input type="hidden" name="delete_all_translated_posts">
-        <input type="submit" value="Удалить все переведенные посты">
-    </form>
-
-    <?php
-
-    global $wpdb;
-
-    if ( isset($_POST['delete_translations_cache']) ) {
-        $wpdb->query("DELETE FROM `wp_go_translations`");
-        echo "кеш переводов удален";
-    }
-
-    if ( isset($_POST['delete_translated_posts']) ) {
-
-        $translated_posts_field = $_POST['delete_translated_posts'];
-        $translated = $wpdb->get_results("SELECT DISTINCT $translated_posts_field FROM `wp_go_translations`", ARRAY_A);
-        
-        foreach ($translated as $post) {
-            wp_delete_post( $post[$translated_posts_field], true );
-            $wpdb->query("UPDATE `wp_go_translations` SET $translated_posts_field = NULL WHERE $translated_posts_field = ".$post[$translated_posts_field] );
-        }
-
-        echo "$translated_posts_field - посты удалены";
-    }
-
-    if ( isset($_POST['delete_all_translated_posts']) ) { delete_all_translated_posts(); }
-
-    if ( $_POST['translate']=='yes' ) {
-
-        $result = translate_posts( $lanuages_options );
-
-        if ( $result == 'no_tasks' )
-            echo "Задачи по переводам не поставлены.";
-        if ( $result == 'google_translate_not_responding' )
-            echo "Переводчик гугла не вернул переведенный текст.";
     }
 }
 

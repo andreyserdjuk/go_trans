@@ -8,21 +8,6 @@ Author: Andrej Serdjuk
 Author URI: http://vk.com/lincoln6eco
 */
 
-// detect Ajax request
-if ( !empty($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"]=='XMLHttpRequest' ) {
-
-    if ( isset($_POST['go_trans_options']) ) {
-
-        $go_trans_options = json_decode(stripslashes($_POST['go_trans_options']), true);
-        update_option( 'go_trans_options', $go_trans_options );
-    }
-
-    var_dump($_POST);
-
-
-    exit;
-}
-
 require_once("go_form.php");
 
 add_action( 'admin_menu', 'register_go_trans_menu_page' );
@@ -84,26 +69,65 @@ function go_trans_admin_menu() {
     wp_register_style('go_trans_styles', plugins_url('Go_Trans/go_trans_styles.css'));
     wp_enqueue_style('go_trans_styles');
 
-
     $go_trans_translate_options = array( 'options' => array( 'post_status' => 'draft' ) );
     $lang_set = '{"ab":"абхазский","av":"аварский","ae":"авестийский","az":"азербайджанский","ay":"аймара","ak":"акан","sq":"албанский","am":"амхарский","en":"английский","ar":"арабский","hy/ am":"армянский","as":"ассамский","aa":"афарский","af":"африкаанс","bm":"бамбара","eu":"баскский","ba":"башкирский","be":"белорусский","bn":"бенгальский","my":"бирманский","bi":"бислама","bg":"болгарский","bs":"боснийский","br":"бретонский","cy":"валлийский","hu":"венгерский","ve":"венда","vo":"волапюк","wo":"волоф","vi":"вьетнамский","gl":"галисийский","lg":"ганда","hz":"гереро","kl":"гренландский","el":"греческий (новогреческий)","ka":"грузинский","gn":"гуарани","gu":"гуджарати","gd":"гэльский","da":"датский","dz":"дзонг-кэ","dv":"дивехи (мальдивский)","zu":"зулу","he":"иврит","ig":"игбо","yi":"идиш","id":"индонезийский","ia":"интерлингва","ie":"интерлингве","iu":"инуктитут","ik":"инупиак","ga":"ирландский","is":"исландский","es":"испанский","it":"итальянский","yo":"йоруба","kk":"казахский","kn":"каннада","kr":"канури","ca":"каталанский","ks":"кашмири","qu":"кечуа","ki":"кикуйю","kj":"киньяма","ky":"киргизский","zh":"китайский","kv":"коми","kg":"конго","ko":"корейский","kw":"корнский","co":"корсиканский","xh":"коса","ku":"курдский","km":"кхмерский","lo":"лаосский","la":"латинский","lv":"латышский","ln":"лингала","lt":"литовский","lu":"луба-катанга","lb":"люксембургский","mk":"македонский","mg":"малагасийский","ms":"малайский","ml":"малаялам","mt":"мальтийский","mi":"маори","mr":"маратхи","mh":"маршалльский","mo":"молдавский","mn":"монгольский","gv":"мэнский (мэнкский)","nv":"навахо","na":"науру","nd":"ндебеле северный","nr":"ндебеле южный","ng":"ндунга","de":"немецкий","ne":"непальский","nl":"нидерландский (голландский)","no":"норвежский","ny":"ньянджа","nn":"нюнорск (новонорвежский)","oj":"оджибве","oc":"окситанский","or":"ория","om":"оромо","os":"осетинский","pi":"пали","pa":"пенджабский","fa":"персидский","pl":"польский","pt":"португальский","ps":"пушту","rm":"ретороманский","rw":"руанда","ro":"румынский","rn":"рунди","ru":"русский","sm":"самоанский","sg":"санго","sa":"санскрит","sc":"сардинский","ss":"свази","sr":"сербский","si":"сингальский","sd":"синдхи","sk":"словацкий","sl":"словенский","so":"сомали","st":"сото южный","sw":"суахили","su":"сунданский","tl":"тагальский","tg":"таджикский","th":"тайский","ty":"таитянский","ta":"тамильский","tt":"татарский","tw":"тви","te":"телугу","bo":"тибетский","ti":"тигринья","to":"тонганский","tn":"тсвана","ts":"тсонга","tr":"турецкий","tk/ tu":"туркменский","uz":"узбекский","ug":"уйгурский","uk":"украинский","ur":"урду","fo":"фарерский","fj":"фиджи","fi":"финский","fr":"французский","fy":"фризский","ff":"фулах","ha":"хауса","hi":"хинди","ho":"хиримоту","cu":"церковнославянский","ch":"чаморро","ce":"чеченский","cs":"чешский","za":"чжуанский","cv":"чувашский","sv":"шведский","sn":"шона","ee":"эве","eo":"эсперанто","et":"эстонский","jv":"яванский","ja":"японский"}';
     $lang_set = json_decode($lang_set, true);
 
-    $go_trans_options = '{ ru:{id_cat:0, enabled:0, domain:""} }';
-    add_option( 'go_trans_options', $go_trans_options);
-    $go_trans_options = get_option('go_trans_options');
+    add_option( 'go_trans_options', json_decode('{ ru-Ru:{enabled:0, lang_code:"ru"} }', true));
 
-    get_main_form($lang_set);
-   
-    global $wpdb;
+    $msg = dispatchPost($lang_set);
+    $go_trans_options = get_option('go_trans_options');
+    // array(2) { ["ru-Ru"]=> array(2) { ["enabled"]=> int(1) ["lang_domain"]=> string(2) "ru" } ["en-eng"]=> array(2) { ["enabled"]=> int(1) ["lang_domain"]=> string(2) "en" } }
+    get_main_form( $go_trans_options, $lang_set, $msg );
+}
+
+// old function
+function dispatchPost ( $lang_set ) {
+
+    $msg = ">> ";
+    // update categories list
+    if ( isset($_POST['lang_options']) ) {
+
+        $go_trans_options = json_decode( stripcslashes($_POST['lang_options']), true );
+        update_option( 'go_trans_options', $go_trans_options );
+
+        // gather array with absent categories
+        $cats_to_delete = array();
+        $cats_to_create = array();
+        foreach ( $go_trans_options as $domain => $options ) {
+
+            $cat = get_term_by('name', $domain, 'category', ARRAY_A);
+            $cats_to_delete[$domain] = $cat['term_id'];
+            $domains = array();
+            if ( !$cat ) {
+                $cats_to_create[$lang_set[$lang_code]] = array( 'lang_code'=>$lang_code, 'domain' => $domain );
+            }
+        }
+
+        // delete absent in request categories
+        $categories_ids = get_all_category_ids(); // get all id's of categories
+        foreach ( $categories_ids as $cat_id ) {
+            if ( !in_array($cat_id, $cats_to_delete) )
+                wp_delete_category($cat_id);
+        }
+        
+        // create absent in database categories
+        foreach ( $cats_to_create as $lang_name => $cat ) {
+            // wp_create_category($cat_name);
+            wp_insert_category(array( 'cat_name' => $cat['domain'],
+              'category_description' => $lang_name,
+              'category_nicename' => $cat['domain'],
+              'taxonomy' => 'category' ) );
+        }
+        $msg .= "список рубрик обновлен" . PHP_EOL;
+    }
 
     if ( isset($_POST['delete_translations_cache']) ) {
         $wpdb->query("DELETE FROM `wp_go_translations`");
-        echo "кеш переводов удален";
+        $msg .= "кеш переводов удален" . PHP_EOL;
     }
 
     if ( isset($_POST['delete_translated_posts']) ) {
-
         $translated_posts_field = $_POST['delete_translated_posts'];
         $translated = $wpdb->get_results("SELECT DISTINCT $translated_posts_field FROM `wp_go_translations`", ARRAY_A);
         
@@ -112,20 +136,34 @@ function go_trans_admin_menu() {
             $wpdb->query("UPDATE `wp_go_translations` SET $translated_posts_field = NULL WHERE $translated_posts_field = ".$post[$translated_posts_field] );
         }
 
-        echo "$translated_posts_field - посты удалены";
+        $msg .= "$translated_posts_field - посты удалены" . PHP_EOL;
     }
 
-    if ( isset($_POST['delete_all_translated_posts']) ) { delete_all_translated_posts(); }
+    if ( isset($_POST['delete_all_translated_posts']) ) {
+        delete_all_translated_posts();
+        $m .= "все переведнные посты удалены" . PHP_EOL;
+    }
 
-    if ( $_POST['translate']=='yes' ) {
+    if ( isset($_POST['post_status']) ) {
+        $go_trans_options = get_option('go_trans_options');
+        $task = buildTask( $go_trans_options );
+        $ru_cat = get_term_by('slug', 'ru-ru', 'category');
+        $ru_cat = $ru_cat->term_id;
+        $result = translate_posts( $task, $_POST['post_status'] );
 
-        $result = translate_posts( $go_trans_options );
-
-        if ( $result == 'no_tasks' )
-            echo "Задачи по переводам не поставлены.";
         if ( $result == 'google_translate_not_responding' )
-            echo "Переводчик гугла не вернул переведенный текст.";
+            $m .= "Переводчик гугла не вернул переведенный текст.";
     }
+    return $msg;
+}
+
+function buildTask ( $go_trans_options ) {
+    $task = array();
+    foreach ( $go_trans_options as $domain => $opt ) {
+        if ( $opt['enabled']==1 )
+            $task[$domain] = $opt['lang_domain'];
+    }
+    return empty($task)? false : $task;
 }
 
 function translate_post ( $post_id ) {
@@ -221,50 +259,36 @@ function delete_all_translated_posts ( $id = false ) {
 
 function go_trans_option_page() {}
 
-function get_languages_keys( $lanuages_options = false ) {
-
-    if ( !$lanuages_options ) $lanuages_options = get_option('lanuages_options');
-
-    if ( $lanuages_options['english']['enabled']==1 && !empty($lanuages_options['english']['id']) ) $languages_keys['en'] = $lanuages_options['english']['id'];
-    if ( $lanuages_options['french']['enabled']==1 && !empty($lanuages_options['french']['id']) )   $languages_keys['fr'] = $lanuages_options['french']['id'];
-    if ( $lanuages_options['chinese']['enabled']==1 && !empty($lanuages_options['chinese']['id']) ) $languages_keys['zh-hant'] = $lanuages_options['chinese']['id'];
-
-    return empty($languages_keys)? false : $languages_keys;
-}
-
-function translate_posts ( $lanuages_options ) {
-
-    // get user-defined tasks
-    $languages_keys = get_languages_keys( $lanuages_options );
-    if ( empty($languages_keys) ) return 'no_tasks';
+/**
+ * @param [ array( 'domain' => 'lang_code' ) ]  //     array(2) { ["eng"]=> string(2) "en" ["fr"]=> string(2) "fr" }
+ */
+function translate_posts ( $task, $post_status, $ru_cat_id ) {
 
     $russian_posts = get_posts( array(
         'offset'            =>    0,
-        'category'          =>    $lanuages_options['russian']['id'],
+        'category'          =>    $ru_cat_id,
         'post_type'         =>    'post',
-        'post_status'       =>    'publish') );
+        'post_status'       =>    $post_status) );
 
     global $wpdb;
-    $post_status = isset($_POST['post_status'])? $_POST['post_status'] : 'draft';
 
-    foreach ( $russian_posts as $post ) {
+    $ru_id = array_search('ru', $task);
 
-        setup_postdata($post);
-        $post_id = $post->ID;
+    foreach ( $russian_posts as $post ) {  setup_postdata($post);
 
-        $tr_ids = $wpdb->get_results( "SELECT * FROM `wp_go_translations` WHERE ru_post_id = $post_id", ARRAY_A );
-        if ( empty($tr_ids[0]['en_post_id']) && !empty($languages_keys['en']) ) $translation_task['en'] = 'en_post_id';
-        if ( empty($tr_ids[0]['fr_post_id']) && !empty($languages_keys['fr']) ) $translation_task['fr'] = 'fr_post_id';
-        if ( empty($tr_ids[0]['cn_post_id']) && !empty($languages_keys['zh-hant']) ) $translation_task['zh-hant'] = 'cn_post_id';
+        foreach ( $task as $domain => $lang_code ) {
 
-        foreach ( $translation_task as $lang_code => $lang_table_name ) {
+            if ( $lang_code=='ru' ) continue;
+            $tr_post = $wpdb->get_row($wpdb->prepare("SELECT ru_id FROM `go_translated_posts` WHERE ru_id = %d AND domain = %s", $post->ID,  $domain), ARRAY_A);
+            if ( !empty($tr_post['ru_id']) ) continue;
 
             $post_content = go_translate_tag_adapter ( $post->post_content, $lang_code );
             $post_title = go_translate_tag_adapter ( $post->post_title, $lang_code );
 
             if ( $post_content && $post_title ) {
 
-                $cat_id = $languages_keys[$lang_code];
+                $cat_id = get_term_by('slug', $domain, 'category');
+                $cat_id = $cat_id->term_id;
 
                 $post_data_for_insert = array(
                   'comment_status' => 'open', // 'closed' означает, что комментарии закрыты.
@@ -275,20 +299,12 @@ function translate_posts ( $lanuages_options ) {
                   'post_type' => 'post'
                 );
 
-                $inserted_post_id = wp_insert_post( $post_data_for_insert, $wp_error );
+                $inserted_post_id = wp_insert_post( $post_data_for_insert );
 
-                // current post field does not exist in table, so we need to insert it
-                $test = $wpdb->query("SELECT $lang_table_name FROM `wp_go_translations` WHERE ru_post_id = $post_id");
-
-                if ( empty($test) )
-                    $wpdb->query("INSERT INTO `wp_go_translations`(ru_post_id, $lang_table_name) VALUES ($post_id, $inserted_post_id)");
-                else    // current post fiels already created, so we need to update it
-                    $wpdb->query("UPDATE `wp_go_translations` SET $lang_table_name = $inserted_post_id WHERE ru_post_id = $post_id");
+                $wpdb->query($wpdb->prepare("INSERT INTO `go_translated_posts` VALUES(NULL, %d, %d, %s)", $post->ID, $inserted_post_id, $domain));
 
             } else return 'google_translate_not_responding';
         }
-        $translation_codes = null;
-        $translation_task = null;
     }
 }
 
@@ -297,6 +313,7 @@ function go_translate_tag_adapter ( $text, $lang_code ) {
     preg_match_all( "/(\[[^\]\[]*\])|(<[^>]*>)/", $text, $tags );
     $tag_lib = array();
     $count = 0;
+   
     foreach ($tags[0] as $tag) {
         $count++;
         $text = str_replace($tag, '(('.$count.'))', $text);
@@ -338,7 +355,6 @@ function go_translate_tag_adapter ( $text, $lang_code ) {
         $code++;
         $text = str_replace( $leftq.$code.$right, $tag, $text);
     }
-
     return $text;
 }
 

@@ -10,12 +10,11 @@ $('#save_options').on('click', function () {
 		var domain = $(this).find('input[name=domain]').val(),
 			lang_domain = $(this).find('select[name=lang_domain]').val(),
 			enabled = $(this).find('input[type=checkbox]')[0].checked==true? 1 : 0;
-		output[lang_domain] = {enabled:enabled, domain:domain};
+		output[domain] = {enabled:enabled, lang_domain:lang_domain};
 	});
-	// console.log(JSON.stringify(output))
 
-	if (ajaxSend(output))
-		msg('Данные сохранены');
+	$('#lang_options [name=lang_options]').val(JSON.stringify(output));
+	$('#lang_options').submit();
 
 	return false;
 });
@@ -31,7 +30,7 @@ $('.add_language').on('click', function(){
 
 	for ( lang_code in lang_set ) {
 		var option = $('<option></option>');
-		option.value = lang_code;
+		option.val(lang_code);
 		option.html(lang_set[lang_code]);
 		select.append(option);
 	}
@@ -45,31 +44,3 @@ $('.add_language').on('click', function(){
 
 // REMOVE Language
 $('.remove_language').live('click', function(){	$(this).closest('tr').remove(); });
-
-
-
-function ajaxSend(data) {
-
-	var request = $.ajax({
-	  url: "/wp-admin/admin.php?page=Go_Trans/Go_Trans.php",
-	  type: "POST",
-	  data: data
-	});
-
-	request.done(function(msg) {
-		$("#console textarea").val(  $("#console textarea").val() + "\r\n" + msg );
-		return true;
-	});
-
-	request.fail(function(jqXHR, textStatus) {
-	 $("#console textarea").val( 'ajax error: ' + textStatus );
-	});
-}
-
-function msg(msg) {
-	$('#main_wrapper').after($('<div id="msg"></div>').css('display','none').html(msg));
-	$('#msg').fadeIn(300).fadeOut(1000);
-}
-
-// debugging
-$('#clear_console').on('click', function(){ $("#console textarea").val(''); });

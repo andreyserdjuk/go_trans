@@ -57,7 +57,6 @@ function get_main_form ( $go_trans_options, $lang_set, $msg ) {
                 <option value="private">Приватные</option>
             </select>
             <input type="submit" id="translate" value="Translate">
-            <input type="hidden" name="translate_all" value="yes">
             <input type="hidden" name="go_trans_options">
         </form><br>
 

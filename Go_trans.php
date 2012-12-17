@@ -8,10 +8,29 @@ Author: Andrej Serdjuk
 Author URI: http://vk.com/lincoln6eco
 */
 
+/*
+дописать триггер удаления поста
+- удалить постмета удаляемого поста (если это пост на русском языке)
+- обновить постмета источника перевода и удалить постмета удаляемого поста
+*/
+
 require_once("go_form.php");
 require_once("lib_go_trans.php");
 
 add_action( 'admin_menu', 'register_go_trans_menu_page' );
+add_action( 'pre_get_posts', 'setLoadingCategory' );
+add_action( 'add_meta_boxes', 'add_go_translate_metabox' );
+
+function add_go_translate_metabox () {
+    add_meta_box(
+        'go_tr',
+        'Опции перевода',
+        'html_go_translate_metabox',
+        'post',
+        'normal',
+        'low'
+    );
+}
 
 function register_go_trans_menu_page () {
 
@@ -34,6 +53,7 @@ function go_trans_admin_menu() {
 
     add_option( 'domain_lang', array('rus'=>'ru'));
     add_option( 'lang_enabled', array('ru'));
+    add_option( 'lang_set', $lang_set );
 
     $msg = dispatchPost( $lang_set );
     $domain_lang = get_option('domain_lang');
@@ -98,17 +118,18 @@ function translate_posts ( $post_status=false, $post_id=false ) {
 	    'category'          =>    'ru',
 	    'post_type'         =>    'post') );
 	else
-		$russian_posts[] = get_post( $post_id );
+		$russian_posts = array( get_post( $post_id ) );
 
 	$lang_enabled = get_option('lang_enabled');
 
     foreach ( $russian_posts as $post ) { setup_postdata($post);
     	
     	$go_translations = get_post_meta( $post->ID, 'go_translations' ); // 'en' => 12, fr => 13
+    	$go_translations = $go_translations[0]; // key 0 contains serialized array - this idiotism by wp creators
 
     	foreach ( $lang_enabled as $lang ) {
     		
-    		if ( !empty($go_translations[$lang]) ) continue;
+    		if ( !empty($go_translations[$lang]) || $lang=='ru' ) continue;
 
             $post_content = go_translate_tag_adapter ( $post->post_content, $lang );
             $post_title = go_translate_tag_adapter ( $post->post_title, $lang );
@@ -135,23 +156,61 @@ function translate_posts ( $post_status=false, $post_id=false ) {
     }
 }
 
-function delete_translated_posts ( $lang=false ) {
+function delete_translated_posts ( $lang=false, $ru_post_id=false, $post_id=false ) {
 
-    $russian_posts = get_posts( array(
-	    'offset'            =>    0,
-	    'category'          =>    'ru',
-	    'post_type'         =>    'post') );
+
+// here is flying data from html_go_translate_metabox : we want to delete some or all translations
+	if ( $post_id && $ru_post_id ) {
+		$go_translations = get_post_meta( $ru_post_id, 'go_translations' ); // 'en' => 12, fr => 13
+		$go_translations = $go_translations[0]; // key 0 contains serialized array - this idiotism by wp creators
+		wp_delete_post( $post_id, true );
+		$translation_lang_code = get_post_meta( $post_id, 'go_translations' );
+		$translation_lang_code = $translation_lang_code[0];
+
+		$go_translations[]
+
+	} else
+
+
+
+	$ru_cat_id = get_category_by_slug('ru');
+
+	    $russian_posts = get_posts( array(
+		    'offset'            =>    0,
+		    'category'          =>    $ru_cat_id->term_id,
+		    'post_type'         =>    'post',
+		    'suppress_filters'  =>	  true ) );
 
 	foreach ($russian_posts as $post) { setup_postdata( $post );
 
 		$go_translations = get_post_meta( $post->ID, 'go_translations' ); // 'en' => 12, fr => 13
+		$go_translations = $go_translations[0]; // key 0 contains serialized array - this idiotism by wp creators
 		
-		foreach ( $go_translations as $translation_lang_code => $translation_id ) {
-			
-			if ( !$lang || $lang=='all' )
-				wp_delete_post( $translation_id, true );
-			elseif ( $lang == $translation_lang_code )
-				wp_delete_post( $translation_id, true );
+		if ( !empty($go_translations) ) {
+
+			foreach ( $go_translations as $translation_lang_code => $translation_id ) {
+
+				$translation_id = (int) $translation_id; // oh fucking string was here
+				if ( !$lang || $lang=='all' ) {
+					wp_delete_post( $translation_id, true );
+					unset($go_translations[$translation_lang_code]);
+				} elseif ( $lang == $translation_lang_code ) {
+					wp_delete_post( $translation_id, true );
+					unset($go_translations[$translation_lang_code]);
+				}
+			}
+			update_post_meta( $post->ID, 'go_translations', $go_translations );
 		}
+	}
+}
+
+function setLoadingCategory ( $query ) {
+
+	$domain_lang = get_option('domain_lang');
+	preg_match("/^[^\.]*/", $_SERVER["HTTP_HOST"], $m);
+	
+	if ( !empty($m) && $m[0]!='www' && !empty($domain_lang[$m[0]]) ) {
+
+		$query->set( 'cat', $domain_lang[$m[0]] );
 	}
 }

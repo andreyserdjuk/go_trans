@@ -12,15 +12,18 @@ Author URI: http://vk.com/lincoln6eco
 write trigger of post deleting
 - delete postmeta of translation and update postmeta of source
 */
-
 require_once("go_form.php");
 require_once("lib_go_trans.php");
+
+add_filter( 'wp_title', 'getDomainTitle', 100, 1);
+add_filter( 'the_permalink', 'setDomainPermalink' );
 
 add_action( 'admin_menu', 'register_go_trans_menu_page' );
 add_action( 'add_meta_boxes', 'add_go_translate_metabox' );
 
-add_action( 'pre_get_posts', 'setLoadingCategory' );
-add_filter( 'the_permalink', 'setDomainPermalink' );
+if ( !strstr($_SERVER["REQUEST_URI"], 'wp-admin') )
+    add_action( 'pre_get_posts', 'setLoadingCategory' );
+
 
 
 function add_go_translate_metabox () {
@@ -50,7 +53,7 @@ function go_trans_admin_menu() {
     wp_enqueue_style('go_trans_styles');
 
     $go_trans_translate_options = array( 'options' => array( 'post_status' => 'draft' ) );
-    $lang_set = '{"ab":"абхазский","av":"аварский","ae":"авестийский","az":"азербайджанский","ay":"аймара","ak":"акан","sq":"албанский","am":"амхарский","en":"английский","ar":"арабский","hy/ am":"армянский","as":"ассамский","aa":"афарский","af":"африкаанс","bm":"бамбара","eu":"баскский","ba":"башкирский","be":"белорусский","bn":"бенгальский","my":"бирманский","bi":"бислама","bg":"болгарский","bs":"боснийский","br":"бретонский","cy":"валлийский","hu":"венгерский","ve":"венда","vo":"волапюк","wo":"волоф","vi":"вьетнамский","gl":"галисийский","lg":"ганда","hz":"гереро","kl":"гренландский","el":"греческий (новогреческий)","ka":"грузинский","gn":"гуарани","gu":"гуджарати","gd":"гэльский","da":"датский","dz":"дзонг-кэ","dv":"дивехи (мальдивский)","zu":"зулу","he":"иврит","ig":"игбо","yi":"идиш","id":"индонезийский","ia":"интерлингва","ie":"интерлингве","iu":"инуктитут","ik":"инупиак","ga":"ирландский","is":"исландский","es":"испанский","it":"итальянский","yo":"йоруба","kk":"казахский","kn":"каннада","kr":"канури","ca":"каталанский","ks":"кашмири","qu":"кечуа","ki":"кикуйю","kj":"киньяма","ky":"киргизский","zh":"китайский","kv":"коми","kg":"конго","ko":"корейский","kw":"корнский","co":"корсиканский","xh":"коса","ku":"курдский","km":"кхмерский","lo":"лаосский","la":"латинский","lv":"латышский","ln":"лингала","lt":"литовский","lu":"луба-катанга","lb":"люксембургский","mk":"македонский","mg":"малагасийский","ms":"малайский","ml":"малаялам","mt":"мальтийский","mi":"маори","mr":"маратхи","mh":"маршалльский","mo":"молдавский","mn":"монгольский","gv":"мэнский (мэнкский)","nv":"навахо","na":"науру","nd":"ндебеле северный","nr":"ндебеле южный","ng":"ндунга","de":"немецкий","ne":"непальский","nl":"нидерландский (голландский)","no":"норвежский","ny":"ньянджа","nn":"нюнорск (новонорвежский)","oj":"оджибве","oc":"окситанский","or":"ория","om":"оромо","os":"осетинский","pi":"пали","pa":"пенджабский","fa":"персидский","pl":"польский","pt":"португальский","ps":"пушту","rm":"ретороманский","rw":"руанда","ro":"румынский","rn":"рунди","ru":"русский","sm":"самоанский","sg":"санго","sa":"санскрит","sc":"сардинский","ss":"свази","sr":"сербский","si":"сингальский","sd":"синдхи","sk":"словацкий","sl":"словенский","so":"сомали","st":"сото южный","sw":"суахили","su":"сунданский","tl":"тагальский","tg":"таджикский","th":"тайский","ty":"таитянский","ta":"тамильский","tt":"татарский","tw":"тви","te":"телугу","bo":"тибетский","ti":"тигринья","to":"тонганский","tn":"тсвана","ts":"тсонга","tr":"турецкий","tk/ tu":"туркменский","uz":"узбекский","ug":"уйгурский","uk":"украинский","ur":"урду","fo":"фарерский","fj":"фиджи","fi":"финский","fr":"французский","fy":"фризский","ff":"фулах","ha":"хауса","hi":"хинди","ho":"хиримоту","cu":"церковнославянский","ch":"чаморро","ce":"чеченский","cs":"чешский","za":"чжуанский","cv":"чувашский","sv":"шведский","sn":"шона","ee":"эве","eo":"эсперанто","et":"эстонский","jv":"яванский","ja":"японский"}';
+    $lang_set = '{"ab":"абхазский","av":"аварский","ae":"авестийский","az":"азербайджанский","ay":"аймара","ak":"акан","sq":"албанский","am":"амхарский","en":"английский","ar":"арабский","hy":"армянский","as":"ассамский","aa":"афарский","af":"африкаанс","bm":"бамбара","eu":"баскский","ba":"башкирский","be":"белорусский","bn":"бенгальский","my":"бирманский","bi":"бислама","bg":"болгарский","bs":"боснийский","br":"бретонский","cy":"валлийский","hu":"венгерский","ve":"венда","vo":"волапюк","wo":"волоф","vi":"вьетнамский","gl":"галисийский","lg":"ганда","hz":"гереро","kl":"гренландский","el":"греческий (новогреческий)","ka":"грузинский","gn":"гуарани","gu":"гуджарати","gd":"гэльский","da":"датский","dz":"дзонг-кэ","dv":"дивехи (мальдивский)","zu":"зулу","he":"иврит","ig":"игбо","yi":"идиш","id":"индонезийский","ia":"интерлингва","ie":"интерлингве","iu":"инуктитут","ik":"инупиак","ga":"ирландский","is":"исландский","es":"испанский","it":"итальянский","yo":"йоруба","kk":"казахский","kn":"каннада","kr":"канури","ca":"каталанский","ks":"кашмири","qu":"кечуа","ki":"кикуйю","kj":"киньяма","ky":"киргизский","zh":"китайский","kv":"коми","kg":"конго","ko":"корейский","kw":"корнский","co":"корсиканский","xh":"коса","ku":"курдский","km":"кхмерский","lo":"лаосский","la":"латинский","lv":"латышский","ln":"лингала","lt":"литовский","lu":"луба-катанга","lb":"люксембургский","mk":"македонский","mg":"малагасийский","ms":"малайский","ml":"малаялам","mt":"мальтийский","mi":"маори","mr":"маратхи","mh":"маршалльский","mo":"молдавский","mn":"монгольский","gv":"мэнский (мэнкский)","nv":"навахо","na":"науру","nd":"ндебеле северный","nr":"ндебеле южный","ng":"ндунга","de":"немецкий","ne":"непальский","nl":"нидерландский (голландский)","no":"норвежский","ny":"ньянджа","nn":"нюнорск (новонорвежский)","oj":"оджибве","oc":"окситанский","or":"ория","om":"оромо","os":"осетинский","pi":"пали","pa":"пенджабский","fa":"персидский","pl":"польский","pt":"португальский","ps":"пушту","rm":"ретороманский","rw":"руанда","ro":"румынский","rn":"рунди","ru":"русский","sm":"самоанский","sg":"санго","sa":"санскрит","sc":"сардинский","ss":"свази","sr":"сербский","si":"сингальский","sd":"синдхи","sk":"словацкий","sl":"словенский","so":"сомали","st":"сото южный","sw":"суахили","su":"сунданский","tl":"тагальский","tg":"таджикский","th":"тайский","ty":"таитянский","ta":"тамильский","tt":"татарский","tw":"тви","te":"телугу","bo":"тибетский","ti":"тигринья","to":"тонганский","tn":"тсвана","ts":"тсонга","tr":"турецкий","tk/ tu":"туркменский","uz":"узбекский","ug":"уйгурский","uk":"украинский","ur":"урду","fo":"фарерский","fj":"фиджи","fi":"финский","fr":"французский","fy":"фризский","ff":"фулах","ha":"хауса","hi":"хинди","ho":"хиримоту","cu":"церковнославянский","ch":"чаморро","ce":"чеченский","cs":"чешский","za":"чжуанский","cv":"чувашский","sv":"шведский","sn":"шона","ee":"эве","eo":"эсперанто","et":"эстонский","jv":"яванский","ja":"японский"}';
     $lang_set = json_decode($lang_set, true);
 
     add_option( 'domain_lang', array('rus'=>'ru'));
@@ -82,6 +85,10 @@ function dispatchPost ( $lang_set ) {
 
     if ( !empty($_POST['delete_translated_posts']) ) {
         delete_translated_posts( $_POST['delete_translated_posts'] );
+    }
+
+    if ( !empty($_POST['update_title_translations']) ) {
+        setDomainTitle();
     }
 }
 
@@ -209,6 +216,7 @@ function delete_translated_posts ( $lang=false, $ru_post_id=false, $post_id=fals
                         wp_delete_post( $translation_id, true );
                         unset($go_translations[$translation_lang_code]);
                     }
+                        exit;
                 }
                 update_post_meta( $post->ID, 'go_translations', $go_translations );
             }
@@ -216,26 +224,34 @@ function delete_translated_posts ( $lang=false, $ru_post_id=false, $post_id=fals
     }
 }
 
-function getIdCategoryDomain() {
+function getSubDomain() {
     
     $domain_lang = get_option('domain_lang');
-    foreach ($domain_lang as $domain => $domain) {
+    foreach ($domain_lang as $domain => $lang) {
         if ( strstr( $_SERVER["HTTP_HOST"], $domain ) )
-            return get_category_by_slug( $domain );
+            return $domain;
     }
+}
+
+function getCategoryDomain() {
+    
+    $subDomain = getSubDomain();
+    $domain_lang = get_option('domain_lang');
+    return get_category_by_slug( $domain_lang[$subDomain] );
 }
 
 function setLoadingCategory ( $query ) {
 
-    $IdCategory = getIdCategoryDomain();
-    if ( $IdCategory )
-        $query->set( 'cat', $IdCategory );
+    $category = getCategoryDomain();
+    // var_dump($category); exit;
+    if ( $category )
+        $query->set( 'cat', $category->term_id );
 }
 
 function setDomainPermalink ( $permalink ) {
 
     $domain_lang = get_option('domain_lang');
-    foreach ($domain_lang as $domain => $domain) {
+    foreach ($domain_lang as $domain => $lang) {
         if ( strstr( $_SERVER["HTTP_HOST"], $domain ) ) {
 
             if ( strstr($permalink, 'www') )
@@ -245,4 +261,24 @@ function setDomainPermalink ( $permalink ) {
             }
         }
     }    //   "/(?<=\/\/)[^\.]*(?=\.[^\.]*\.[^\.]*)/" subdomain or www (maybe for future)
+}
+
+function setDomainTitle () {
+    
+    $source_title = get_bloginfo('name');
+    $domain_lang = get_option('domain_lang');
+    add_option('go_domain_titles', '');
+    $domain_titles = array();
+    foreach ($domain_lang as $domain => $lang) {
+        $domain_titles[$domain] = go_translate( $source_title, $lang );
+    }
+    update_option('go_domain_titles', $domain_titles);
+}
+
+function getDomainTitle ( $title ) {
+
+    $go_domain_titles = get_option('go_domain_titles');
+    $subdomain = getSubDomain();
+    if ( !empty($go_domain_titles[$subdomain]) )
+        return $go_domain_titles[$subdomain];
 }

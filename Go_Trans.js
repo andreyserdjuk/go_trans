@@ -10,6 +10,13 @@ size = function(obj){
 	return size;
 }
 
+search = function(obj, element) {
+	for (el in obj) {
+		if ( obj[el] == element )
+			return true;
+	}
+}
+
 // SAVE Options
 $('#save_options').on('click', function () {
 
@@ -21,8 +28,10 @@ $('#save_options').on('click', function () {
 			lang_domain = $(this).find('select[name=lang]').val(),
 			enabled = $(this).find('input[type=checkbox]')[0].checked==true? 1 : 0;
 
-			if (enabled)
-				output['lang_enabled'][c++] = lang_domain;
+			if (enabled) {
+				if ( !search(output['lang_enabled'], lang_domain) )
+					output['lang_enabled'][c++] = lang_domain;
+			}
 			output['domain_lang'][domain] = lang_domain;
 	});
 

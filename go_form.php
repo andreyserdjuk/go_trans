@@ -67,6 +67,11 @@ function get_main_form ( $domain_lang, $lang_enabled=array(), $lang_set, $msg ) 
             </select>
             <input type="submit" value="Удалить переведенные посты">
         </form>
+
+        <form method="POST">
+            <input type="hidden" name="update_title_translations" value="1">
+            <input type="submit" value="Обновить переводы тайтлов">
+        </form>
     </div>
 <?php
 }

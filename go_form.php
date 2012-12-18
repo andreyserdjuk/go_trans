@@ -73,6 +73,12 @@ function get_main_form ( $domain_lang, $lang_enabled=array(), $lang_set, $msg ) 
 
 function html_go_translate_metabox( $post ) {
 
+    if ( isset($_POST['delete_translated_post']) )
+        delete_translated_posts ( null, $_POST['delete_translated_post'], $_POST['tr_id'] );
+    
+    if ( !empty($_POST['post_id']) && !empty($_POST['post_status']) )
+        translate_posts( $_POST['post_status'], $_POST['post_id'] );
+
     $go_translations = get_post_meta( $post->ID, 'go_translations' ); // 'en' => 12, fr => 13
     $go_translations = $go_translations[0]; // key 0 contains serialized array - this idiotism by wp creators
     $lang_set = get_option('lang_set');
@@ -93,21 +99,13 @@ function html_go_translate_metabox( $post ) {
     <?php if ( !empty($go_translations) ): ?>
         <form method="POST">
             <input type="hidden" name="delete_translated_post" value="<?= $post->ID ?>">
-            <select name="lang">
+            <select name="tr_id">
                 <option value="all">Все</option>
                 <?php foreach ( $go_translations as $lang => $id ): ?>
-                    <option value="<?= $lang ?>"><?= $lang_set[$lang] ?></option>
+                    <option value="<?= $id ?>"><?= $lang_set[$lang] ?></option>
                 <?php endforeach; ?>
             </select>
             <input type="submit" value="Удалить переводы">
         </form>
-    <?php endif; ?>
-
-    <?php
-
-    if ( isset($_POST['delete_translated_posts']) )
-        delete_translated_posts ( $_POST['lang'], $_POST['delete_translated_post'] );
-    
-    if ( !empty($_POST['post_id']) && !empty($_POST['post_status']) )
-        translate_posts( $_POST['post_status'], $_POST['post_id'] );
+    <?php endif; 
 }

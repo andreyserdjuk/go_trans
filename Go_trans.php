@@ -21,12 +21,17 @@ add_filter( 'the_permalink', 'setDomainPermalink' );
 add_action( 'admin_menu', 'register_go_trans_menu_page' );
 add_action( 'add_meta_boxes', 'add_go_translate_metabox' );
 
+
 if ( !strstr($_SERVER["REQUEST_URI"], 'wp-admin') )
     add_action( 'pre_get_posts', 'setLoadingCategory' );
 
 
-
 function add_go_translate_metabox () {
+
+    $post_categories = wp_get_post_categories( (int) $_GET['post'], array('fields' => 'names') );
+    if ( false === array_search('ru', $post_categories) )
+        return false;
+
     add_meta_box(
         'go_tr',
         'Опции перевода',
@@ -53,11 +58,12 @@ function go_trans_admin_menu() {
     wp_enqueue_style('go_trans_styles');
 
     $go_trans_translate_options = array( 'options' => array( 'post_status' => 'draft' ) );
-    $lang_set = '{"ab":"абхазский","av":"аварский","ae":"авестийский","az":"азербайджанский","ay":"аймара","ak":"акан","sq":"албанский","am":"амхарский","en":"английский","ar":"арабский","hy":"армянский","as":"ассамский","aa":"афарский","af":"африкаанс","bm":"бамбара","eu":"баскский","ba":"башкирский","be":"белорусский","bn":"бенгальский","my":"бирманский","bi":"бислама","bg":"болгарский","bs":"боснийский","br":"бретонский","cy":"валлийский","hu":"венгерский","ve":"венда","vo":"волапюк","wo":"волоф","vi":"вьетнамский","gl":"галисийский","lg":"ганда","hz":"гереро","kl":"гренландский","el":"греческий (новогреческий)","ka":"грузинский","gn":"гуарани","gu":"гуджарати","gd":"гэльский","da":"датский","dz":"дзонг-кэ","dv":"дивехи (мальдивский)","zu":"зулу","he":"иврит","ig":"игбо","yi":"идиш","id":"индонезийский","ia":"интерлингва","ie":"интерлингве","iu":"инуктитут","ik":"инупиак","ga":"ирландский","is":"исландский","es":"испанский","it":"итальянский","yo":"йоруба","kk":"казахский","kn":"каннада","kr":"канури","ca":"каталанский","ks":"кашмири","qu":"кечуа","ki":"кикуйю","kj":"киньяма","ky":"киргизский","zh":"китайский","kv":"коми","kg":"конго","ko":"корейский","kw":"корнский","co":"корсиканский","xh":"коса","ku":"курдский","km":"кхмерский","lo":"лаосский","la":"латинский","lv":"латышский","ln":"лингала","lt":"литовский","lu":"луба-катанга","lb":"люксембургский","mk":"македонский","mg":"малагасийский","ms":"малайский","ml":"малаялам","mt":"мальтийский","mi":"маори","mr":"маратхи","mh":"маршалльский","mo":"молдавский","mn":"монгольский","gv":"мэнский (мэнкский)","nv":"навахо","na":"науру","nd":"ндебеле северный","nr":"ндебеле южный","ng":"ндунга","de":"немецкий","ne":"непальский","nl":"нидерландский (голландский)","no":"норвежский","ny":"ньянджа","nn":"нюнорск (новонорвежский)","oj":"оджибве","oc":"окситанский","or":"ория","om":"оромо","os":"осетинский","pi":"пали","pa":"пенджабский","fa":"персидский","pl":"польский","pt":"португальский","ps":"пушту","rm":"ретороманский","rw":"руанда","ro":"румынский","rn":"рунди","ru":"русский","sm":"самоанский","sg":"санго","sa":"санскрит","sc":"сардинский","ss":"свази","sr":"сербский","si":"сингальский","sd":"синдхи","sk":"словацкий","sl":"словенский","so":"сомали","st":"сото южный","sw":"суахили","su":"сунданский","tl":"тагальский","tg":"таджикский","th":"тайский","ty":"таитянский","ta":"тамильский","tt":"татарский","tw":"тви","te":"телугу","bo":"тибетский","ti":"тигринья","to":"тонганский","tn":"тсвана","ts":"тсонга","tr":"турецкий","tk/ tu":"туркменский","uz":"узбекский","ug":"уйгурский","uk":"украинский","ur":"урду","fo":"фарерский","fj":"фиджи","fi":"финский","fr":"французский","fy":"фризский","ff":"фулах","ha":"хауса","hi":"хинди","ho":"хиримоту","cu":"церковнославянский","ch":"чаморро","ce":"чеченский","cs":"чешский","za":"чжуанский","cv":"чувашский","sv":"шведский","sn":"шона","ee":"эве","eo":"эсперанто","et":"эстонский","jv":"яванский","ja":"японский"}';
+    $lang_set = '{"az":"азербайджанский","sq":"албанский","en":"английский","ar":"арабский","hy":"армянский","af":"африкаанс","eu":"баскский","be":"белорусский","bn":"бенгальский","bg":"болгарский","cy":"валлийский","hu":"венгерский","vi":"вьетнамский","gl":"галисийский","nl":"голландский","el":"греческий","ka":"грузинский","gu":"гуджарати","da":"датский","iw":"иврит","yi":"идиш","id":"индонезийский","ga":"ирландский","is":"исландский","es":"испанский","it":"итальянский","kn":"каннада","ca":"каталанский","zh-TW":"китайский (традиционный)","zh-CN":"китайский (упрощенный)","ko":"корейский","ht":"креольский (Гаити)","lo":"лаосский","la":"латынь","lv":"латышский","lt":"литовский","mk":"македонский","ms":"малайский","mt":"мальтийский","de":"немецкий","no":"норвежский","fa":"персидский","pl":"польский","pt":"португальский","ro":"румынский","ru":"русский","sr":"сербский","sk":"словацкий","sl":"словенский","sw":"суахили","tl":"тагальский","th":"тайский","ta":"тамильский","te":"телугу","tr":"турецкий","uk":"украинский","ur":"урду","fi":"финский","fr":"французский","hi":"хинди","hr":"хорватский","cs":"чешский","sv":"шведский","eo":"эсперанто","et":"эстонский","ja":"японский"}';
     $lang_set = json_decode($lang_set, true);
 
     add_option( 'domain_lang', array('rus'=>'ru'));
     add_option( 'lang_enabled', array('ru'));
+    delete_option('lang_set');
     add_option( 'lang_set', $lang_set );
 
     $msg = dispatchPost( $lang_set );
@@ -121,14 +127,20 @@ function updateCategoriesList ( $lang_list, $lang_set ) {
 
 function translate_posts ( $post_status=false, $post_id=false ) {
 
-    if ( !$post_id )
+    if ( !$post_id ) {
+
+        $cat_id = get_term_by('slug', 'ru', 'category');
+        $cat_id = $cat_id->term_id;
+
         $russian_posts = get_posts( array(
-        'offset'            =>    0,
-        'category'          =>    'ru',
-        'post_type'         =>    'post') );
-    else
+        'offset'       =>    0,
+        'numberposts'  =>   -1,
+        'category'     =>    $cat_id,
+        'post_type'    =>    'post') );
+    } else
         $russian_posts = array( get_post( $post_id ) );
 
+        // var_dump($russian_posts); exit;
     $lang_enabled = get_option('lang_enabled');
 
     foreach ( $russian_posts as $post ) { setup_postdata($post);
@@ -195,6 +207,7 @@ function delete_translated_posts ( $lang=false, $ru_post_id=false, $post_id=fals
 
             $russian_posts = get_posts( array(
                 'offset'            =>    0,
+                'numberposts'       =>   -1,
                 'category'          =>    $ru_cat_id->term_id,
                 'post_type'         =>    'post',
                 'suppress_filters'  =>    true ) );
@@ -216,7 +229,6 @@ function delete_translated_posts ( $lang=false, $ru_post_id=false, $post_id=fals
                         wp_delete_post( $translation_id, true );
                         unset($go_translations[$translation_lang_code]);
                     }
-                        exit;
                 }
                 update_post_meta( $post->ID, 'go_translations', $go_translations );
             }
@@ -281,4 +293,43 @@ function getDomainTitle ( $title ) {
     $subdomain = getSubDomain();
     if ( !empty($go_domain_titles[$subdomain]) )
         return $go_domain_titles[$subdomain];
+}
+
+function save_canonical_domains ( $post, $subdomain_lang ) {
+    
+    $canonical_subdomains = get_post_meta($post->ID, 'canonical_subdomains');
+    $canonical_subdomains = $canonical_subdomains[0];
+
+    if ( !$canonical_subdomains )
+        $canonical_subdomains = array();
+
+    foreach ( $subdomain_lang as $subdomain => $lang ) {
+            
+        if ( !empty($_POST["canonical-$subdomain"]) && 
+            $_POST["canonical-$subdomain"] == 'on' ) {
+            if ( false===in_array($subdomain, $canonical_subdomains) ) {
+                $canonical_subdomains[] = $subdomain;
+            }
+        } else {
+            $key = array_search($subdomain, $canonical_subdomains);
+            if ( false!==$key )
+                unset( $canonical_subdomains[$key] );
+        }
+    }
+    update_post_meta($post->ID, 'canonical_subdomains', $canonical_subdomains);
+}
+
+function get_canonical_links( $post_id ) {
+
+    $canonical_subdomains = get_post_meta($post_id, 'canonical_subdomains');
+    $canonical_subdomains = $canonical_subdomains[0];
+    $this_permalink = get_permalink( $post_id );
+
+    if ( !empty($canonical_subdomains) ) {
+
+        foreach ( $canonical_subdomains as $subdomain ) {
+            
+            // $permalink = 
+        }
+    }
 }

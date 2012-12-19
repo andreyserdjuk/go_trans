@@ -71,12 +71,15 @@ function get_main_form ( $domain_lang, $lang_enabled=array(), $lang_set, $msg ) 
         <form method="POST">
             <input type="hidden" name="update_title_translations" value="1">
             <input type="submit" value="Обновить переводы тайтлов">
-        </form>
+        </form><br>
+
     </div>
 <?php
 }
 
 function html_go_translate_metabox( $post ) {
+
+    $subdomain_lang = get_option('domain_lang');
 
     if ( isset($_POST['delete_translated_post']) )
         delete_translated_posts ( null, $_POST['delete_translated_post'], $_POST['tr_id'] );
@@ -84,12 +87,35 @@ function html_go_translate_metabox( $post ) {
     if ( !empty($_POST['post_id']) && !empty($_POST['post_status']) )
         translate_posts( $_POST['post_status'], $_POST['post_id'] );
 
+    if ( !empty($_POST['canonical_subdomains']) ) {
+        save_canonical_domains( $post, $subdomain_lang );
+    }
+
+    $canonical_subdomains = get_post_meta($post->ID, 'canonical_subdomains');
+    $canonical_subdomains = $canonical_subdomains[0];
+
     $go_translations = get_post_meta( $post->ID, 'go_translations' ); // 'en' => 12, fr => 13
     $go_translations = $go_translations[0]; // key 0 contains serialized array - this idiotism by wp creators
     $lang_set = get_option('lang_set');
     ?>
 
     <form></form><!-- without this shit next form tags will be deleting in output... I love wp. -->
+
+    <form method="POST">
+        Список главных доменов:
+        <?php 
+        if ( !empty($subdomain_lang) )
+            foreach ($subdomain_lang as $subdomain => $lang): ?>
+                <input id="<?= $subdomain ?>" type="checkbox" name="canonical-<?= $subdomain ?>" 
+
+                <?php if ( false !== array_search($subdomain, $canonical_subdomains) ): ?>checked="checked" <?php endif; ?>
+
+                ><label for="<?= $subdomain ?>"><?= $subdomain ?></label>&nbsp
+        <?php endforeach; ?>
+        <input type="hidden" name="canonical_subdomains" value="1"><br>
+        <input type="submit" value="Сохранить список главных субдоменов">
+    </form><br>
+
     <form method="POST">
         <input type="hidden" name="post_id" value="<?= $post->ID ?>">
         <input type="submit" value="Перевести пост">
@@ -104,13 +130,13 @@ function html_go_translate_metabox( $post ) {
     <?php if ( !empty($go_translations) ): ?>
         <form method="POST">
             <input type="hidden" name="delete_translated_post" value="<?= $post->ID ?>">
+            <input type="submit" value="Удалить переводы">
             <select name="tr_id">
                 <option value="all">Все</option>
                 <?php foreach ( $go_translations as $lang => $id ): ?>
                     <option value="<?= $id ?>"><?= $lang_set[$lang] ?></option>
                 <?php endforeach; ?>
             </select>
-            <input type="submit" value="Удалить переводы">
         </form>
     <?php endif; 
 }

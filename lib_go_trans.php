@@ -3,7 +3,7 @@
  * allows to translate tags img: alt, title and exclude tags code from translation
  */
 function go_translate_tag_adapter ( $text, $lang_code ) {
-return $lang_code . "-" . $text;
+
     preg_match_all( "/(\[[^\]\[]*\])|(<[^>]*>)/", $text, $tags );
     $tag_lib = array();
     $count = 0;

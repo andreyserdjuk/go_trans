@@ -1,6 +1,6 @@
 <?php
 
-function get_main_form ( $domain_lang, $lang_enabled=array(), $lang_set, $msg ) { ?>
+function get_main_form ( $domain_lang, $lang_enabled=array(), $lang_set, $canonical_text, $msg ) { ?>
     
     <div style="float:left;" id="main_wrapper">
         <h1>Заполнить пустоту переводами</h1>
@@ -73,6 +73,11 @@ function get_main_form ( $domain_lang, $lang_enabled=array(), $lang_set, $msg ) 
             <input type="submit" value="Обновить переводы тайтлов">
         </form><br>
 
+        <form method="POST">
+            <input type="text" name="update_canonical_translations" value="<?= $canonical_text ?>">
+            <input type="submit" value="Обновить перевод каноникал">
+        </form><br>
+
     </div>
 <?php
 }
@@ -90,16 +95,23 @@ function html_go_translate_metabox( $post ) {
     if ( !empty($_POST['canonical_subdomains']) ) {
         save_canonical_domains( $post, $subdomain_lang );
     }
+    if ( !empty($_POST['snippet_text']) ) {
+        setSnippetText( $post->ID, $_POST['snippet_text'] );
+    }
 
-    $canonical_subdomains = get_post_meta($post->ID, 'canonical_subdomains');
-    $canonical_subdomains = $canonical_subdomains[0];
+    $snippet_text = my_get_post_meta ( $post->ID, 'snippet_text' );
+    $canonical_subdomains = my_get_post_meta($post->ID, 'canonical_subdomains');
 
-    $go_translations = get_post_meta( $post->ID, 'go_translations' ); // 'en' => 12, fr => 13
-    $go_translations = $go_translations[0]; // key 0 contains serialized array - this idiotism by wp creators
+    $go_translations = my_get_post_meta( $post->ID, 'go_translations' ); // 'en' => 12, fr => 13
     $lang_set = get_option('lang_set');
     ?>
 
     <form></form><!-- without this shit next form tags will be deleting in output... I love wp. -->
+
+    <form method="POST">
+        <input type="text" name="snippet_text" value="<?= $snippet_text['ru'] ?>">
+        <input type="submit" value="Обновить переводы сниппета">
+    </form>
 
     <form method="POST">
         Список главных доменов:
@@ -108,7 +120,7 @@ function html_go_translate_metabox( $post ) {
             foreach ($subdomain_lang as $subdomain => $lang): ?>
                 <input id="<?= $subdomain ?>" type="checkbox" name="canonical-<?= $subdomain ?>" 
 
-                <?php if ( false !== array_search($subdomain, $canonical_subdomains) ): ?>checked="checked" <?php endif; ?>
+                <?php if ( gettype($canonical_subdomains)=='array' && false !== array_search($subdomain, $canonical_subdomains) ): ?>checked="checked" <?php endif; ?>
 
                 ><label for="<?= $subdomain ?>"><?= $subdomain ?></label>&nbsp
         <?php endforeach; ?>

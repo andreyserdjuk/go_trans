@@ -63,16 +63,23 @@ function go_trans_admin_menu() {
 
     add_option( 'domain_lang', array('rus'=>'ru'));
     add_option( 'lang_enabled', array('ru'));
-    delete_option('lang_set');
+    add_option( 'canonical_translations', '' );
+    // delete_option('lang_set');
     add_option( 'lang_set', $lang_set );
 
     $msg = dispatchPost( $lang_set );
     $domain_lang = get_option('domain_lang');
+
+    $canonical_translations = get_option('canonical_translations');
+    if ( empty($canonical_translations['ru']) )
+        $canonical_translations['ru'] = '';
+
     if ( gettype($domain_lang)!='array' ) $domain_lang = array('rus'=>'ru');
     $lang_enabled = get_option('lang_enabled');
     if ( gettype($lang_enabled)!='array' ) $lang_enabled = array('ru');
+    // $canonical_text = get_option('canonical_text');
 
-    get_main_form( $domain_lang, $lang_enabled, $lang_set, $msg );
+    get_main_form( $domain_lang, $lang_enabled, $lang_set, $canonical_translations['ru'], $msg );
 }
 
 function dispatchPost ( $lang_set ) {
@@ -95,6 +102,10 @@ function dispatchPost ( $lang_set ) {
 
     if ( !empty($_POST['update_title_translations']) ) {
         setDomainTitle();
+    }
+
+    if ( !empty($_POST['update_canonical_translations']) ) {
+        setCanonicalTranslations($_POST['update_canonical_translations']);
     }
 }
 
@@ -145,8 +156,7 @@ function translate_posts ( $post_status=false, $post_id=false ) {
 
     foreach ( $russian_posts as $post ) { setup_postdata($post);
         
-        $go_translations = get_post_meta( $post->ID, 'go_translations' ); // 'en' => 12, fr => 13
-        $go_translations = $go_translations[0]; // key 0 contains serialized array - this idiotism by wp creators
+        $go_translations = my_get_post_meta( $post->ID, 'go_translations' ); // 'en' => 12, fr => 13
 
         foreach ( $lang_enabled as $lang ) {
             
@@ -166,6 +176,8 @@ function translate_posts ( $post_status=false, $post_id=false ) {
                   'post_content' => $post_content,
                   'post_status' => $post_status? $post_status : 'draft',
                   'post_title' => $post_title,
+                  'post_date' => $post->post_date,
+                  'post_date_gmt' => $post->post_date_gmt,
                   'post_type' => 'post' );
 
                 $inserted_post_id = wp_insert_post( $post_data_for_insert );
@@ -181,8 +193,7 @@ function delete_translated_posts ( $lang=false, $ru_post_id=false, $post_id=fals
 
     if ( $post_id && $ru_post_id ) {
 
-        $go_translations = get_post_meta( $ru_post_id, 'go_translations' ); // 'en' => 12, fr => 13
-        $go_translations = $go_translations[0]; // key 0 contains serialized array - this idiotism by wp creators
+        $go_translations = my_get_post_meta( $ru_post_id, 'go_translations' ); // 'en' => 12, fr => 13
         
         if ( $post_id!='all' ) {
 
@@ -214,8 +225,7 @@ function delete_translated_posts ( $lang=false, $ru_post_id=false, $post_id=fals
 
         foreach ($russian_posts as $post) { setup_postdata( $post );
 
-            $go_translations = get_post_meta( $post->ID, 'go_translations' ); // 'en' => 12, fr => 13
-            $go_translations = $go_translations[0]; // key 0 contains serialized array - this idiotism by wp creators
+            $go_translations = my_get_post_meta( $post->ID, 'go_translations' ); // 'en' => 12, fr => 13
             
             if ( !empty($go_translations) ) {
 
@@ -256,8 +266,12 @@ function setLoadingCategory ( $query ) {
 
     $category = getCategoryDomain();
     // var_dump($category); exit;
-    if ( $category )
+    if ( $category ) {
         $query->set( 'cat', $category->term_id );
+        // $query->set( 'orderby', 'date' );
+        // $query->set( 'order', 'ASC' );
+    }
+        // $query->set( 'order', 'DESC' );
 }
 
 function setDomainPermalink ( $permalink ) {
@@ -297,8 +311,7 @@ function getDomainTitle ( $title ) {
 
 function save_canonical_domains ( $post, $subdomain_lang ) {
     
-    $canonical_subdomains = get_post_meta($post->ID, 'canonical_subdomains');
-    $canonical_subdomains = $canonical_subdomains[0];
+    $canonical_subdomains = my_get_post_meta($post->ID, 'canonical_subdomains');
 
     if ( !$canonical_subdomains )
         $canonical_subdomains = array();
@@ -319,17 +332,84 @@ function save_canonical_domains ( $post, $subdomain_lang ) {
     update_post_meta($post->ID, 'canonical_subdomains', $canonical_subdomains);
 }
 
-function get_canonical_links( $post_id ) {
+function get_canonical_links() {
 
-    $canonical_subdomains = get_post_meta($post_id, 'canonical_subdomains');
-    $canonical_subdomains = $canonical_subdomains[0];
-    $this_permalink = get_permalink( $post_id );
+    $post_id = get_the_ID();
 
-    if ( !empty($canonical_subdomains) ) {
+    if ( !$canonical_subdomains = my_get_post_meta($post_id, 'canonical_subdomains') ) {
 
-        foreach ( $canonical_subdomains as $subdomain ) {
-            
-            // $permalink = 
+        if ( $source_lang_id = my_get_post_meta( $post_id, 'source_lang' ) ) {
+
+            if ( !$canonical_subdomains = my_get_post_meta($source_lang_id, 'canonical_subdomains') ) {
+
+                return false;
+            }
+        } else {
+            return false;
         }
     }
+
+    $title = get_the_title();
+    $permalink = get_permalink();
+
+    if ( !$this_subdomain = getSubDomain() )
+        $this_subdomain = 'www';
+
+    $canonical_translations = get_option('canonical_translations');
+    $domain_lang = get_option('domain_lang');
+    $title_text_intro = $canonical_translations[$domain_lang[$this_subdomain]];
+    $title_text = array();
+
+    foreach ( $canonical_subdomains as $subdomain ) {
+
+        if ( $this_subdomain != $subdomain ) {
+
+            $link = str_replace( 'www', $subdomain, $permalink );
+            // $title_text .= "<a href=\"$link\">$title $subdomain.alldates.net</a>  ";
+            $title_text[] = "<a href=\"$link\">$subdomain.alldates.net</a>";
+        }
+    }
+    if ( !empty($title_text) )
+        return $title_text_intro . " " . implode(', ', $title_text);
+}
+
+function my_get_post_meta ( $post_id, $key ) {
+    $re = get_post_meta($post_id, $key);
+    return empty($re[0])? false : $re[0];
+}
+
+function setCanonicalTranslations ( $text ) {
+
+    $domain_lang = get_option('domain_lang');
+    $canonical_translations = array();
+
+    foreach ( $domain_lang as $subdomain => $lang ) {
+        $canonical_translations[$lang] = go_translate_tag_adapter( $text, $lang );
+    }
+    update_option( 'canonical_translations', $canonical_translations );
+}
+
+function setSnippetText ( $post_id, $text ) {
+
+    $domain_lang = get_option('domain_lang');
+    $snippet_text = array();
+
+    foreach ( $domain_lang as $subdomain => $lang ) {
+        $snippet_text[$lang] = go_translate_tag_adapter( $text, $lang );
+    }
+    update_post_meta( $post_id, 'snippet_text', $snippet_text );
+}
+
+function getSnippetText() {
+
+    $post_id = get_the_ID();
+    $snippet_text = my_get_post_meta ( $post_id, 'snippet_text' );
+
+    if ( !$this_subdomain = getSubDomain() )
+        $this_subdomain = 'www';
+
+    $domain_lang = get_option('domain_lang');
+
+    if ( !empty($snippet_text[$domain_lang[$this_subdomain]]) )
+        return $snippet_text[$domain_lang[$this_subdomain]];
 }

@@ -47,7 +47,7 @@ function go_translate_tag_adapter ( $text, $lang_code ) {
     $code = 0;
     foreach ( $tag_lib as $tag ) {
         $code++;
-        $text = str_replace( $leftq.$code.$right, $tag, $text);
+        $text = str_replace( array( $leftq.$code.$right, $leftq.$code.' '.$right, $leftq.' '.$code.$right, $leftq.' '.$code.' '.$right ), $tag, $text, $c);
     }
     return $text;
 }
